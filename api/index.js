@@ -10,8 +10,11 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "*"
+  origin: true,
+  credentials: true
 }));
+
+app.options("*", cors()); // handle preflight
 app.use(express.json());
 
 // Routes
