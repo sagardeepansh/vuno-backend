@@ -8,24 +8,34 @@ dotenv.config();
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Routes
 app.use("/api", routes);
 
-app.get('/', (req, res) => {
-    res.send('Hello from Express on Vercel!');
+app.get("/", (req, res) => {
+  res.send("Hello from Express on Vercel!");
 });
 
-// mongoose
-//   .connect('mongodb://127.0.0.1:27017/vuno')
-//   .then(() => console.log("MongoDB Connected"))
-//   .catch((err) => console.error(err));
-mongoose
-    .connect('mongodb+srv://admin:Q5ijo6823VV99FPc@cluster0.cs8pize.mongodb.net/vuno')
-    .then(() => console.log("MongoDB Connected"))
-    .catch((err) => console.error(err));
+// ✅ MongoDB connection (cached)
+let isConnected = false;
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server running on port ${process.env.PORT}`);
-});
+const connectDB = async () => {
+  if (isConnected) return;
+
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    isConnected = true;
+    console.log("MongoDB Connected");
+  } catch (err) {
+    console.error("DB Error:", err);
+  }
+};
+
+// ✅ Wrap handler for Vercel
+export default async function handler(req, res) {
+  await connectDB();
+  return app(req, res);
+}
