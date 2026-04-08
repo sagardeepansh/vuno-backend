@@ -7,7 +7,7 @@
 
   const iframe = document.createElement("iframe");
 
-  iframe.src = "http://localhost:5500/widget/index.html";
+  iframe.src = "https://vuno-backend.vercel.app/widget/index.html";
 
   iframe.style.position = "fixed";
   iframe.style.bottom = "20px";
