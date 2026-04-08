@@ -2,7 +2,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI('AIzaSyAuhR6qosLa7_cMIp_GwCaIbgY_eTuRvXk');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ✅ TEXT MODEL (for answering)

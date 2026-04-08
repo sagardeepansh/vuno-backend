@@ -3,7 +3,7 @@ import { getVectors } from "../db/vector.db.js";
 import { cosineSimilarity } from "../utils/similarity.js";
 
 // ✅ Fix: Use environment variable correctly (no quotes around process.env)
-const genAI = new GoogleGenerativeAI('AIzaSyAuhR6qosLa7_cMIp_GwCaIbgY_eTuRvXk');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 console.log('GEMINI_API_KEY loaded:', !!process.env.GEMINI_API_KEY);
 
