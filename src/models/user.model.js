@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
+    gkey: {
+      type: String,
+    },
     password: {
       type: String,
       required: true,

@@ -1,42 +1,45 @@
-// services/rag.service.js
+export async function answerQuery(query, context, llm) {
+  try {
+    if (!context || context.trim().length === 0) {
+      return "Not in document";
+    }
 
-import { llm } from "./gemini.js";
-
-export async function answerQuery(query, context) {
-  //   const prompt = `
-  // You are an AI assistant.
-
-  // Answer ONLY from the context.
-  // If answer is not present, say "I don't know".
-
-  // Context:
-  // ${context}
-
-  // Question:
-  // ${query}
-  // `;
-
-  const prompt = `
+    const prompt = `
 You are an intelligent document assistant.
 
-Use the provided context to understand the topic and answer the question clearly and accurately.
+Use the provided context to answer clearly.
 
-Guidelines:
-- Base your answer primarily on the context.
-- You may rephrase, summarize, or infer meaning where appropriate.
-- Do NOT copy text blindly—respond naturally.
-- If the answer is partially available, answer with what you know.
-- If the answer is completely missing, reply exactly: "Not in document".
+Rules:
+- Use context as primary source
+- You may summarize or infer
+- Do not copy blindly
+- If partially available → answer what you can
+- If completely missing → reply exactly: "Not in document"
 
 Context:
 ${context}
-
+ 
 Question:
 ${query}
 `;
 
-  const response = await llm.generateContent(prompt);
-  const answer = response.response.text();
+    const response = await llm.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }]
+        }
+      ]
+    });
 
-  return answer;
+    const answer =
+      response?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Not in document";
+
+    return answer.trim();
+
+  } catch (err) {
+    console.error("RAG Answer Error:", err.message);
+    return "Error generating response";
+  }
 }

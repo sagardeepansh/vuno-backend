@@ -101,6 +101,7 @@ export const me = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        gkey: user.gkey,
       }
     });
 
@@ -111,7 +112,7 @@ export const me = async (req, res) => {
 
 export const meUpdate = async (req, res) => {
   try {
-    const { name, email } = req.body;
+    const { name, email, gkey } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -121,6 +122,7 @@ export const meUpdate = async (req, res) => {
     // Update fields
     if (name) user.name = name;
     if (email) user.email = email;
+    if (gkey) user.gkey = gkey;
 
     await user.save();
 
@@ -130,6 +132,7 @@ export const meUpdate = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        gkey: user.gkey,
       },
     });
 
@@ -140,7 +143,6 @@ export const meUpdate = async (req, res) => {
 
 export const createKey = async (req, res) => {
 
-  console.log('req.body', req.body)
   const { name } = req.body;
 
   const rawKey = generateApiKey();

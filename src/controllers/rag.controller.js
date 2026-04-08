@@ -6,8 +6,10 @@ import { chunkText } from "../utils/chunk.js";
 import { embedTexts } from "../services/embedding.service.js";
 import { answerQuery } from "../services/rag.service.js";
 import { OUTPUT_DIM } from "../services/embedding.service.js";
-import { embeddingModel } from "../services/gemini.js";
+// import { embeddingModel } from "../services/gemini.js";
 import mongoose from "mongoose";
+import { getGeminiClient } from "../utils/geminiClient.js";
+import userModel from "../models/user.model.js";
 
 export const uploadDoc = async (req, res) => {
     try {
@@ -38,8 +40,14 @@ export const uploadDoc = async (req, res) => {
         // ✅ Chunk
         const chunks = chunkText(extractedText);
 
+        const user = await userModel.findById(userId);
+
+        const apiKey = user?.gkey || process.env.GEMINI_API_KEY;
+
+        const { embeddingModel } = getGeminiClient(apiKey);
+
         // ✅ Batch embedding
-        const embeddings = await embedTexts(chunks);
+        const embeddings = await embedTexts(chunks, embeddingModel);
 
         const fileId = Date.now().toString();
 
@@ -71,9 +79,15 @@ export const chat = async (req, res) => {
         const { query } = req.body;
         const userId = new mongoose.Types.ObjectId(req.user.id);
 
+        const user = await userModel.findById(userId);
+
         if (!query) {
             return res.status(400).json({ message: "Query required" });
         }
+
+        const apiKey = user?.gkey || process.env.GEMINI_API_KEY;
+
+        const { llm, embeddingModel } = getGeminiClient(apiKey);
 
         // ✅ Embed query
         const result = await embeddingModel.embedContent({
@@ -101,8 +115,7 @@ export const chat = async (req, res) => {
 
         const context = results.map(r => r.text).join("\n\n");
 
-        const answer = await answerQuery(query, context);
-
+        const answer = await answerQuery(query, context, llm);
 
         res.json({
             answer,
