@@ -2,7 +2,7 @@ import express from "express";
 import multer from "multer";
 import { deleteDoc, getDocById, getDocs } from "../controllers/upload.controller.js";
 // import { chat } from "../controllers/chat.controller.js";
-import { createKey, deleteKey, getKeys, login, me, meUpdate, signup } from "../controllers/auth.controller.js";
+import { createKey, deleteKey, getKeys, login, me, meUpdate, signup, verifyOtp } from "../controllers/auth.controller.js";
 import { authenticate, validateApiKey } from "../middleware/auth.middleware.js";
 import { chat, uploadDoc } from "../controllers/rag.controller.js";
 
@@ -23,7 +23,8 @@ router.get("/keys", authenticate, getKeys);
 router.delete("/keys/:id", authenticate, deleteKey);
 
 
-router.post("/signup", signup);
+router.post("/register", signup);
+router.post("/verify-otp", verifyOtp);
 router.post("/login", login);
 router.get("/user", authenticate, me);
 router.put("/user", authenticate, meUpdate);

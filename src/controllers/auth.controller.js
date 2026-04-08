@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import ApiKey from "../models/apikey.model.js";
 import { generateApiKey, generateToken } from "../utils/generateToken.js";
+import { sendOtpEmail } from "../services/sendOtpEmail.js";
 
 /**
  * @route POST /api/auth/signup
@@ -16,8 +17,9 @@ export const signup = async (req, res) => {
     }
 
     // check existing user
-    const exists = await User.findOne({ email });
-    if (exists) {
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser && existingUser.isVerified) {
       return res.status(409).json({ message: "User already exists" });
     }
 
@@ -25,24 +27,89 @@ export const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // create user
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
+    // generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+
+    let user;
+
+    if (existingUser) {
+      // update existing unverified user
+      existingUser.name = name;
+      existingUser.password = hashedPassword;
+      existingUser.otp = otp;
+      existingUser.otpExpiry = otpExpiry;
+      await existingUser.save();
+      user = existingUser;
+    } else {
+      // create new user
+      user = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        isVerified: false,
+        otp,
+        otpExpiry,
+      });
+    }
+
+    // send OTP email
+    await sendOtpEmail(email, otp);
+
+    res.status(200).json({
+      message: "OTP sent to email",
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "User already verified" });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (user.otpExpiry < new Date()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // mark verified
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpiry = null;
+
+    await user.save();
 
     const token = generateToken(user._id);
 
-    res.status(201).json({
-      message: "Signup successful",
+    res.status(200).json({
+      message: "Account verified",
+      token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
       },
-      token,
     });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
