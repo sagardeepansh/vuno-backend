@@ -23,7 +23,7 @@ export const uploadDoc = async (req, res) => {
         formData.append("files", file.buffer, file.originalname);
 
         const ocrRes = await axios.post(
-            "http://localhost:8000/ocr",
+            "http://devdms.techsaga.live/trace/ocr",
             formData,
             { headers: { ...formData.getHeaders() } }
         );
