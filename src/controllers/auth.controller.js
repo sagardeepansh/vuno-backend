@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import ApiKey from "../models/apikey.model.js";
 import { generateApiKey, generateToken } from "../utils/generateToken.js";
 import { sendOtpEmail } from "../services/sendOtpEmail.js";
+import apilogModel from "../models/apilog.model.js";
 
 /**
  * @route POST /api/auth/signup
@@ -240,4 +241,31 @@ export const deleteKey = async (req, res) => {
   });
 
   res.json({ success: true });
+};
+
+export const getDashboardSummary = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const totalRequests = await apilogModel.countDocuments({});
+
+    const activeKeys = await ApiKey.countDocuments({
+      userId
+    });
+
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const errors24h = await apilogModel.countDocuments({
+      status: { $gte: 400 },
+      createdAt: { $gte: last24h },
+    });
+
+    res.json({
+      totalRequests,
+      activeKeys,
+      errors24h,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
 };
