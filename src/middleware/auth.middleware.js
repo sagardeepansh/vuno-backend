@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import ApiKey from "../models/apikey.model.js";
 import apilogModel from "../models/apilog.model.js";
+import User from "../models/user.model.js";
 
 export const authenticate = (req, res, next) => {
   try {
@@ -108,6 +109,9 @@ export const validateApiKey = async (req, res, next) => {
     // ✅ Attach useful data
     req.user = matchedKey.user;
     req.apiKeyId = matchedKey._id;
+    
+    const existingUser = await User.findById(matchedKey.user);
+    
 
     // ✅ DOMAIN VALIDATION START
     const origin =
@@ -118,7 +122,7 @@ export const validateApiKey = async (req, res, next) => {
   console.log('origin', origin)
 
     const domain = extractDomain(origin);
-    const whitelist = matchedKey.whitelistDomains || [];
+    const whitelist = existingUser?.whitelistDomains || [];
 
     if (!isDomainAllowed(domain, whitelist)) {
       return res.status(403).json({
