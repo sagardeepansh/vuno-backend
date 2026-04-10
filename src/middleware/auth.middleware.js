@@ -59,7 +59,7 @@ function extractDomain(url) {
 
 function isDomainAllowed(domain, whitelist = []) {
   if (!domain) return false;
-
+  console.log("Validating domain:", domain, "against whitelist:", whitelist);
   // allow localhost (dev)
   if (domain === "localhost" || domain.startsWith("127.0.0.1")) {
     return true;
