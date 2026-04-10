@@ -110,7 +110,12 @@ export const validateApiKey = async (req, res, next) => {
     req.apiKeyId = matchedKey._id;
 
     // ✅ DOMAIN VALIDATION START
-    const origin = req.headers.origin || req.headers.referer;
+    const origin =
+  req.headers["x-origin"] ||   // ✅ priority
+  req.headers.origin ||
+  req.headers.referer;
+
+  console.log('origin', origin)
 
     const domain = extractDomain(origin);
     const whitelist = matchedKey.whitelistDomains || [];

@@ -4,7 +4,7 @@
   window.__CHATBOT_LOADED__ = true;
 
   const config = window.ChatBotConfig || {};
-
+  config.domain = window.location.href;
   const iframe = document.createElement("iframe");
 
   iframe.src = "https://vuno-backend.vercel.app/widget/index.html";
