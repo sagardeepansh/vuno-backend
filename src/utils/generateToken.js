@@ -8,7 +8,7 @@ export const generateToken = (userId) => {
 };
 
 export const generateApiKey = () => {
-  const prefix = "sk_live_";
+  const prefix = "vu_live_";
   const random = crypto.randomBytes(24).toString("hex");
   return prefix + random;
 };
