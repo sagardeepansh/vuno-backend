@@ -60,25 +60,34 @@ function extractDomain(url) {
 
 function isDomainAllowed(domain, whitelist = []) {
   if (!domain) return false;
+
   console.log("Validating domain:", domain, "against whitelist:", whitelist);
+
   // allow localhost (dev)
   if (domain === "localhost" || domain.startsWith("127.0.0.1")) {
     return true;
   }
 
   return whitelist.some((allowed) => {
-    const clean = allowed.replace(/^www\./, "");
+    try {
+      // Convert URL → hostname
+      const url = new URL(allowed);
+      const clean = url.hostname.replace(/^www\./, "");
 
-    // exact match
-    if (clean === domain) return true;
+      // exact match
+      if (clean === domain) return true;
 
-    // wildcard (*.example.com)
-    if (clean.startsWith("*.")) {
-      const base = clean.replace("*.", "");
-      return domain === base || domain.endsWith(`.${base}`);
+      // wildcard (*.example.com)
+      if (clean.startsWith("*.")) {
+        const base = clean.replace("*.", "");
+        return domain === base || domain.endsWith(`.${base}`);
+      }
+
+      return false;
+    } catch (err) {
+      console.error("Invalid URL in whitelist:", allowed);
+      return false;
     }
-
-    return false;
   });
 }
 
