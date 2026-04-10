@@ -26,26 +26,110 @@ export const authenticate = (req, res, next) => {
 };
 
 
-export const validateApiKey = async (req, res, next) => {
-  const apiKey = req.headers["x-api-key"];
+// export const validateApiKey = async (req, res, next) => {
+//   const apiKey = req.headers["x-api-key"];
 
-  if (!apiKey) return res.status(401).json({ error: "Missing API key" });
+//   if (!apiKey) return res.status(401).json({ error: "Missing API key" });
 
-  const keys = await ApiKey.find();
-   const apiKeydata = await ApiKey.findOne({ apiKey: apiKey });
-   req.apiKeyId = apiKeydata._id;
+//   const keys = await ApiKey.find();
+//    const apiKeydata = await ApiKey.findOne({ apiKey: apiKey });
+//    req.apiKeyId = apiKeydata._id;
 
-  for (let k of keys) {
-    const match = await bcrypt.compare(apiKey, k.key);
-    if (match) {
-      req.user = k.user;
-      k.lastUsed = new Date();
-      await k.save();
-      return next();
-    }
+//   for (let k of keys) {
+//     const match = await bcrypt.compare(apiKey, k.key);
+//     if (match) {
+//       req.user = k.user;
+//       k.lastUsed = new Date();
+//       await k.save();
+//       return next();
+//     }
+//   }
+
+//   return res.status(401).json({ error: "Invalid API key" });
+// };
+
+function extractDomain(url) {
+  try {
+    const { hostname } = new URL(url);
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function isDomainAllowed(domain, whitelist = []) {
+  if (!domain) return false;
+
+  // allow localhost (dev)
+  if (domain === "localhost" || domain.startsWith("127.0.0.1")) {
+    return true;
   }
 
-  return res.status(401).json({ error: "Invalid API key" });
+  return whitelist.some((allowed) => {
+    const clean = allowed.replace(/^www\./, "");
+
+    // exact match
+    if (clean === domain) return true;
+
+    // wildcard (*.example.com)
+    if (clean.startsWith("*.")) {
+      const base = clean.replace("*.", "");
+      return domain === base || domain.endsWith(`.${base}`);
+    }
+
+    return false;
+  });
+}
+
+export const validateApiKey = async (req, res, next) => {
+  try {
+    const apiKey = req.headers["x-api-key"];
+    if (!apiKey) {
+      return res.status(401).json({ message: "Missing API key" });
+    }
+
+    // Fetch all keys (still needed because of bcrypt hashing)
+    const keys = await ApiKey.find();
+
+    let matchedKey = null;
+
+    for (let k of keys) {
+      const match = await bcrypt.compare(apiKey, k.key);
+      if (match) {
+        matchedKey = k;
+        break;
+      }
+    }
+
+    if (!matchedKey) {
+      return res.status(401).json({ message: "Invalid API key" });
+    }
+
+    // ✅ Attach useful data
+    req.user = matchedKey.user;
+    req.apiKeyId = matchedKey._id;
+
+    // ✅ DOMAIN VALIDATION START
+    const origin = req.headers.origin || req.headers.referer;
+
+    const domain = extractDomain(origin);
+    const whitelist = matchedKey.whitelistDomains || [];
+
+    if (!isDomainAllowed(domain, whitelist)) {
+      return res.status(403).json({
+        message: "Domain not allowed",
+      });
+    }
+    // ✅ DOMAIN VALIDATION END
+
+    // update last used
+    matchedKey.lastUsed = new Date();
+    await matchedKey.save();
+
+    return next();
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
 export const trackApiUsage = async (req, res, next) => {

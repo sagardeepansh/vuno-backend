@@ -170,6 +170,7 @@ export const me = async (req, res) => {
         name: user.name,
         email: user.email,
         gkey: user.gkey,
+        whitelistDomains: user.whitelistDomains,
       }
     });
 
@@ -180,7 +181,7 @@ export const me = async (req, res) => {
 
 export const meUpdate = async (req, res) => {
   try {
-    const { name, email, gkey } = req.body;
+    const { name, email, gkey, whitelistDomains } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -191,6 +192,7 @@ export const meUpdate = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (gkey) user.gkey = gkey;
+    if (whitelistDomains) user.whitelistDomains = whitelistDomains;
 
     await user.save();
 
@@ -201,6 +203,7 @@ export const meUpdate = async (req, res) => {
         name: user.name,
         email: user.email,
         gkey: user.gkey,
+        whitelistDomains: user.whitelistDomains,
       },
     });
 

@@ -85,11 +85,14 @@ export const chat = async (req, res) => {
             return res.status(400).json({ message: "Query required" });
         }
 
+        if (!user?.gkey) {
+            return res.status(400).json({ message: "Please provide a valid API key in your profile" });
+        }
+
         const apiKey = user?.gkey || process.env.GEMINI_API_KEY;
 
         const { llm, embeddingModel } = getGeminiClient(apiKey);
 
-        // ✅ Embed query
         const result = await embeddingModel.embedContent({
             content: { parts: [{ text: query }] },
             outputDimensionality: 256,
@@ -97,7 +100,6 @@ export const chat = async (req, res) => {
 
         const queryVector = result.embedding.values;
 
-        // ✅ Mongo Vector Search
         const results = await DocumentModel.aggregate([
             {
                 $vectorSearch: {
@@ -123,6 +125,6 @@ export const chat = async (req, res) => {
         });
 
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: err.message });
     }
 };

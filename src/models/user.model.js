@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
     },
     isVerified: { type: Boolean, default: false },
+    whitelistDomains: [String],
 
     otp: String,
     otpExpiry: Date
